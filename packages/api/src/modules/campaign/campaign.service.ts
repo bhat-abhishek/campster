@@ -369,6 +369,7 @@ export class CampaignService implements OnModuleInit {
       processedTemplate,
       campaign.mail_from,
       unsubscribe_url,
+      campaign.project_id,
     );
   }
 
