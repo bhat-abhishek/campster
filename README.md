@@ -443,18 +443,48 @@ initContainers:
 
 ## Running Tests
 
+### API (NestJS — Jest + `@nestjs/testing`)
+
+Unit tests live next to source files as `*.spec.ts`. E2E tests live in `packages/api/test/`.
+
 ```bash
-# All unit tests
+# Run all API unit tests
 cd packages/api && yarn test
 
-# Watch mode
+# Watch mode (re-runs on file change)
 cd packages/api && yarn test:watch
 
-# Coverage report
+# Coverage report (output → packages/api/coverage/)
 cd packages/api && yarn test:cov
 
-# End-to-end tests
+# End-to-end tests (requires a running DB)
 cd packages/api && yarn test:e2e
+```
+
+### Client (Next.js — Jest + React Testing Library)
+
+Test files live under `packages/client/src/__tests__/` and match `*.test.{ts,tsx}` or `*.spec.{ts,tsx}`.
+
+```bash
+# Run all client unit tests
+cd packages/client && yarn test
+
+# Watch mode
+cd packages/client && yarn test:watch
+
+# Coverage report (output → packages/client/coverage/)
+cd packages/client && yarn test:cov
+```
+
+### Run all tests from the repo root
+
+```bash
+# Run tests in both packages sequentially
+yarn test
+
+# Or target a single package
+yarn test:api
+yarn test:client
 ```
 
 ---
@@ -543,8 +573,14 @@ cd packages/client && yarn dev &
 # 7. Open the app
 open http://localhost:3000
 
-# 8. Run API tests
+# 8. Run API unit tests
 cd packages/api && yarn test
+
+# 9. Run client unit tests
+cd packages/client && yarn test
+
+# Or run all tests from the repo root
+yarn test
 ```
 
 ### Self-hosting quick start (Docker Compose)

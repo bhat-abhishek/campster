@@ -7,9 +7,17 @@
   "workspaces": [
     "packages/*"
   ],
-  "scripts": { 
-    "dev:api" : "cd ./packages/api && yarn start:dev",
-    "dev:client" : "cd ./packages/client && yarn dev"
+  "scripts": {
+    "dev:api": "cd ./packages/api && yarn start:dev",
+    "dev:client": "cd ./packages/client && yarn dev",
+    "test": "yarn workspaces run test",
+    "test:api": "cd ./packages/api && yarn test",
+    "test:api:watch": "cd ./packages/api && yarn test:watch",
+    "test:api:cov": "cd ./packages/api && yarn test:cov",
+    "test:api:e2e": "cd ./packages/api && yarn test:e2e",
+    "test:client": "cd ./packages/client && yarn test",
+    "test:client:watch": "cd ./packages/client && yarn test:watch",
+    "test:client:cov": "cd ./packages/client && yarn test:cov"
   },
   "dependencies": {}
 }
