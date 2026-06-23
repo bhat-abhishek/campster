@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# Run lint-staged — lints and formats only staged files
+npx lint-staged
+
+# Run unit tests — abort commit if any test fails
+yarn test
