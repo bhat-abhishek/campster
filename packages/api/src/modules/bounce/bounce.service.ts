@@ -41,7 +41,7 @@ export class BounceService implements OnModuleInit {
     return;
   }
 
-  async increaseBounceCount(campaign_id: string) {
+  async increaseBounceCount(_campaign_id: string) {
     try {
       await this.db
         .updateTable('campaigns')

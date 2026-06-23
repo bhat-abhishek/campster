@@ -28,7 +28,7 @@ import { EmailModule } from '../email/email.module';
     UserModule,
     ProjectModule,
     ProjectAccessModule,
-    EmailModule
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [AuthServices],

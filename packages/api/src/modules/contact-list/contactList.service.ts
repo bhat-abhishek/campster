@@ -12,7 +12,6 @@ import { NewContact } from '@/schemas/contacts.schema';
 import * as csv from 'csv-parse';
 import { generateUlid } from '@/utils/generators';
 import * as stream from 'stream';
-import { K } from 'handlebars';
 
 @Injectable()
 export class ContactListService implements OnModuleInit {

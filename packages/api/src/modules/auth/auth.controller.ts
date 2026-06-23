@@ -110,7 +110,7 @@ export class AuthController {
   }
 
   @Put('reset-password')
-  async resetPassword(@Body() body : any) {
+  async resetPassword(@Body() body: any) {
     return await this.authService.resetPassword(body);
   }
 }

@@ -58,6 +58,66 @@ $ yarn run test:e2e
 $ yarn run test:cov
 ```
 
+## RUNBOOK — auth unit tests
+
+Exact commands to install, run, and test the `api` package. Run from the
+**repository root** unless noted otherwise.
+
+### Install
+
+```bash
+# Installs every workspace (api + client) via yarn workspaces and wires up the
+# husky git hooks. Run once after cloning.
+yarn install
+```
+
+### Run the unit tests
+
+```bash
+# All api unit tests (*.spec.ts under packages/api/src)
+yarn test:api
+
+# Just the auth module suites
+cd packages/api && npx jest auth
+
+# Watch mode while developing
+yarn test:api:watch
+
+# With coverage report (written to packages/api/coverage)
+yarn test:api:cov
+```
+
+`yarn test` (no suffix) runs the unit tests for **every** workspace — this is
+exactly what the `pre-commit` hook executes, so a green `yarn test` means the
+commit will not be blocked.
+
+### Lint
+
+```bash
+# Lint + auto-fix the api package (also what lint-staged runs on commit)
+yarn lint:api
+```
+
+### What is covered
+
+The auth module is exercised by three co-located suites plus shared test
+doubles:
+
+| File | Scope |
+| --- | --- |
+| `src/modules/auth/auth.service.spec.ts` | `AuthServices` business logic — sign-up validation, sign-in/credential checks, token refresh, forgot/reset password, sign-out. |
+| `src/modules/auth/auth.controller.spec.ts` | `AuthController` HTTP glue — cookie handling, delegation to the service, refresh-token expiry fallback. |
+| `src/modules/auth/auth.guard.spec.ts` | `AuthGuard` — missing/invalid token rejection and payload attachment. |
+| `src/modules/auth/testing/auth.mocks.ts` | Reusable jest test doubles + fixtures shared by the suites (no real DB, JWT secret, or bcrypt binding). |
+
+All collaborators (DB-backed services, `JwtService`, `bcrypt`, the filesystem,
+and Handlebars) are mocked, so the suites are fast and hermetic.
+
+### Pre-commit hook
+
+`.husky/pre-commit` runs `npx lint-staged` (lints staged files) followed by
+`yarn test` (all workspaces). Both must pass before a commit is accepted.
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).

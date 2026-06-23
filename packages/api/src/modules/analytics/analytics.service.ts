@@ -31,7 +31,7 @@ export class AnalyticsService implements OnModuleInit {
   async getEventsGraph() {
     const views = await this.db
       .selectFrom('email_views')
-      .where((eb) => sql`opened_at >= NOW() - INTERVAL '30 days'`)
+      .where((_eb) => sql`opened_at >= NOW() - INTERVAL '30 days'`)
       .select([
         sql`DATE(opened_at)`.as('day'), // Extract the date (day)
         sql`COUNT(*)`.as('view_count'), // Count the number of views

@@ -10,7 +10,7 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import { query, Request } from 'express';
+import { Request } from 'express';
 import { EmailTemplateService } from './emailTemplate.service';
 import { CreateEmailTemplateDto } from './dto/emailTemplate.dto';
 import { generateUlid } from '@/utils/generators';
