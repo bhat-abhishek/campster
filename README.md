@@ -19,6 +19,8 @@
   - [Building Docker Images manually](#building-docker-images-manually)
   - [Kubernetes / any container runtime](#kubernetes--any-container-runtime)
 - [Running Tests](#running-tests)
+- [Linting](#linting)
+- [Pre-commit Hooks](#pre-commit-hooks)
 - [Project Structure](#project-structure)
 - [Runbook](#runbook)
 
@@ -489,6 +491,55 @@ yarn test:client
 
 ---
 
+## Linting
+
+Both packages have ESLint configured. Run linting from the repo root:
+
+```bash
+# Lint all packages
+yarn lint
+
+# Lint individual packages
+yarn lint:api       # NestJS API (ESLint + Prettier)
+yarn lint:client    # Next.js client (eslint-config-next)
+```
+
+Auto-fix lint errors:
+
+```bash
+# API (runs eslint --fix)
+cd packages/api && yarn lint
+
+# Client (runs next lint)
+cd packages/client && yarn lint
+```
+
+---
+
+## Pre-commit Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged) to enforce code quality before every commit.
+
+**What runs on `git commit`:**
+1. **lint-staged** — ESLint runs on staged TypeScript files in the changed package
+2. **Unit tests** — all tests must pass before the commit is accepted
+
+### Setup (one-time, after cloning)
+
+```bash
+yarn install    # installs dependencies and runs `husky` via the prepare script
+```
+
+That's it — Husky registers the `.husky/pre-commit` hook automatically.
+
+### Skip the hook (emergency only)
+
+```bash
+git commit --no-verify -m "your message"
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -548,7 +599,7 @@ docker run -d \
   -p 5432:5432 \
   postgres:16-alpine
 
-# 1. Clone and install
+# 1. Clone and install (husky pre-commit hooks are registered automatically via `prepare`)
 git clone https://github.com/Abhi-Bhat18/campster.git
 cd campster
 yarn install
@@ -581,6 +632,10 @@ cd packages/client && yarn test
 
 # Or run all tests from the repo root
 yarn test
+
+# 10. Verify pre-commit hook is active
+git commit --allow-empty -m "test: verify pre-commit hook"
+# Hook will run lint-staged + yarn test; commit proceeds only if both pass
 ```
 
 ### Self-hosting quick start (Docker Compose)

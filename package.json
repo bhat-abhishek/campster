@@ -8,8 +8,12 @@
     "packages/*"
   ],
   "scripts": {
+    "prepare": "husky",
     "dev:api": "cd ./packages/api && yarn start:dev",
     "dev:client": "cd ./packages/client && yarn dev",
+    "lint": "yarn workspaces run lint",
+    "lint:api": "cd packages/api && yarn lint",
+    "lint:client": "cd packages/client && yarn lint",
     "test": "yarn workspaces run test",
     "test:api": "cd ./packages/api && yarn test",
     "test:api:watch": "cd ./packages/api && yarn test:watch",
@@ -18,6 +22,14 @@
     "test:client": "cd ./packages/client && yarn test",
     "test:client:watch": "cd ./packages/client && yarn test:watch",
     "test:client:cov": "cd ./packages/client && yarn test:cov"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "packages/api/src/**/*.ts": "bash -c 'yarn workspace api lint'",
+    "packages/client/src/**/*.{ts,tsx}": "bash -c 'yarn workspace client lint'"
   },
   "dependencies": {}
 }
