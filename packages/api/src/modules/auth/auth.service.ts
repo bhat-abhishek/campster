@@ -212,13 +212,13 @@ export class AuthServices {
     const verified = await this.jwtService.verify(token, {
       secret: this.configService.get('JWT_SECRET'),
     });
-    
-    console.log("Verified Link", verified);
-    if(verified.email != email) { 
-       throw new HttpException(
-         'Password and confirm password should match',
-         HttpStatus.BAD_REQUEST,
-       );
+
+    console.log('Verified Link', verified);
+    if (verified.email != email) {
+      throw new HttpException(
+        'Password and confirm password should match',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     // hash the password
     const salt = await bcrypt.genSalt(10);
@@ -228,7 +228,6 @@ export class AuthServices {
     return await this.userService.findByIdAndUpdate(verified.id, {
       password: hashedPassword,
     });
-
   }
 
   private generateJwt = async (payload: object, expiry: string = '15min') => {
@@ -236,5 +235,4 @@ export class AuthServices {
       expiresIn: expiry,
     });
   };
-
 }
