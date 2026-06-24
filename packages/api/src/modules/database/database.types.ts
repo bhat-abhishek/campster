@@ -12,6 +12,7 @@ import { RoleTable } from 'src/schemas/role.schema';
 import { UserTable } from 'src/schemas/user.schema';
 import { EmailClickTable } from '@/schemas/emailClick.schema';
 import { TransactionalEmailTable } from '@/schemas/transactionalEmail.schema';
+import { SesConfigTable } from '@/schemas/ses-config.schema';
 
 export interface Database {
   users: UserTable;
@@ -28,4 +29,5 @@ export interface Database {
   email_views: EmailViewTable;
   email_clicks: EmailClickTable;
   transactional_emails: TransactionalEmailTable;
+  ses_configs: SesConfigTable;
 }

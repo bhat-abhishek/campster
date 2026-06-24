@@ -20,6 +20,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { BounceModule } from './modules/bounce/bounce.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { TransactionalModule } from './modules/transactional/transactional.module';
+import { SesModule } from './modules/ses/ses.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { TransactionalModule } from './modules/transactional/transactional.modul
     BounceModule,
     TransactionalModule,
     AnalyticsModule,
+    SesModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

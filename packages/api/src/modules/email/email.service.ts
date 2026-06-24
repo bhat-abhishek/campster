@@ -10,6 +10,7 @@ import { DatabaseService } from '../database/database.service';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { SesService } from '../ses/ses.service';
 
 type MailOptions = {
   from: string;
@@ -25,17 +26,19 @@ type MailOptions = {
 @Injectable()
 export class EmailService implements OnModuleInit {
   private db: Kysely<Database>;
-  private transporter: nodemailer.Transporter;
+  private smtpTransporter: nodemailer.Transporter;
   private readonly logger = new Logger(EmailService.name);
+
   constructor(
     private readonly dbService: DatabaseService,
     private readonly configService: ConfigService,
     private jwtService: JwtService,
+    private readonly sesService: SesService,
   ) {}
 
   onModuleInit() {
     this.db = this.dbService.getDb();
-    this.transporter = nodemailer.createTransport({
+    this.smtpTransporter = nodemailer.createTransport({
       host: this.configService.get('MAIL_HOST'),
       port: this.configService.get('MAIL_PORT'),
       secure: false,
@@ -47,6 +50,27 @@ export class EmailService implements OnModuleInit {
         rejectUnauthorized: false,
       },
     });
+  }
+
+  /**
+   * Returns the SES transporter for a project if one is configured,
+   * falling back to the global SMTP transporter.
+   */
+  private async resolveTransporter(
+    project_id?: string,
+  ): Promise<nodemailer.Transporter> {
+    if (project_id) {
+      try {
+        const sesTransporter =
+          await this.sesService.buildTransporterForProject(project_id);
+        if (sesTransporter) return sesTransporter;
+      } catch (err) {
+        this.logger.warn(
+          `Failed to build SES transporter for project ${project_id}: ${err.message}`,
+        );
+      }
+    }
+    return this.smtpTransporter;
   }
 
   async getCampaignEmails(
@@ -70,6 +94,7 @@ export class EmailService implements OnModuleInit {
     html: string,
     mail_from: string,
     unsubscribeUrl?: string,
+    project_id?: string,
   ) => {
     let mailOptions: MailOptions = {
       from: mail_from,
@@ -88,12 +113,18 @@ export class EmailService implements OnModuleInit {
         },
       };
     }
-    const info = await this.transporter.sendMail(mailOptions);
+
+    const transporter = await this.resolveTransporter(project_id);
+    const info = await transporter.sendMail(mailOptions);
     return info;
   };
 
-  sendTransactionalEmails = async (mailOptions: MailOptions) => {
-    const info = await this.transporter.sendMail(mailOptions);
+  sendTransactionalEmails = async (
+    mailOptions: MailOptions,
+    project_id?: string,
+  ) => {
+    const transporter = await this.resolveTransporter(project_id);
+    const info = await transporter.sendMail(mailOptions);
     return info;
   };
 
@@ -129,7 +160,6 @@ export class EmailService implements OnModuleInit {
       throw new UnauthorizedException();
     }
 
-    // create a new click record
     await this.db
       .insertInto('email_clicks')
       .values({

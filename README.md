@@ -36,7 +36,7 @@
 - **Real-time analytics** — opens, clicks, bounces
 - **A/B testing** — compare subject lines and content
 - **Role-based access control** — fine-grained team permissions
-- **Multiple SMTP adapters** — bring your own mail server
+- **Multiple email providers** — SMTP or AWS SES per project (IAM credentials, environment credential chain, or SES SMTP interface)
 
 ---
 
@@ -171,6 +171,98 @@ BOUNCE_API_KEY=your-bounce-webhook-secret
 # URL the browser uses to reach the API
 NEXT_PUBLIC_API_URL=http://localhost:1335
 ```
+
+---
+
+## AWS SES Configuration
+
+Each project can optionally use AWS SES instead of the global SMTP server. Per-project SES configs are stored encrypted in the database.
+
+### Prerequisites
+
+1. **Set the encryption key** (required to store any SES credentials):
+   ```bash
+   # Generate a random key
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   # Add to your .env:
+   SES_ENCRYPTION_KEY=<generated-value>
+   ```
+
+2. **Install the AWS SDK** (included as a dependency, runs automatically with `yarn install`):
+   ```bash
+   cd packages/api && yarn install
+   ```
+
+3. **Run the new migration** so the `ses_configs` table is created:
+   ```bash
+   cd packages/api && yarn seed
+   ```
+
+### Supported Authentication Methods
+
+| Method | Description | Required env vars |
+|---|---|---|
+| `iam_credentials` | Explicit AWS access key + secret stored encrypted in the database | `SES_ENCRYPTION_KEY` |
+| `environment` | Default AWS credential chain (env vars, IAM role, instance profile) | `AWS_REGION` + AWS credentials via env/role |
+| `ses_smtp` | SES SMTP endpoint with SMTP username/password (stored encrypted) | `SES_ENCRYPTION_KEY` |
+
+### API Endpoints
+
+All endpoints require authentication (JWT cookie).
+
+#### Save or update a project's SES config
+
+```bash
+# IAM credentials method
+curl -X POST http://localhost:1335/ses/config \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "project_id": "YOUR_PROJECT_ID",
+    "auth_method": "iam_credentials",
+    "region": "us-east-1",
+    "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+    "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  }'
+
+# Environment credential chain (uses AWS_ACCESS_KEY_ID / IAM role / etc.)
+curl -X POST http://localhost:1335/ses/config \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "project_id": "YOUR_PROJECT_ID",
+    "auth_method": "environment",
+    "region": "us-east-1"
+  }'
+
+# SES SMTP interface
+curl -X POST http://localhost:1335/ses/config \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "project_id": "YOUR_PROJECT_ID",
+    "auth_method": "ses_smtp",
+    "smtp_host": "email-smtp.us-east-1.amazonaws.com",
+    "smtp_port": 587,
+    "smtp_user": "SMTP_USERNAME_FROM_AWS_CONSOLE",
+    "smtp_pass": "SMTP_PASSWORD_FROM_AWS_CONSOLE"
+  }'
+```
+
+#### Get a project's SES config (credentials are never returned)
+
+```bash
+curl http://localhost:1335/ses/config/YOUR_PROJECT_ID
+```
+
+#### Remove a project's SES config (falls back to global SMTP)
+
+```bash
+curl -X DELETE http://localhost:1335/ses/config/YOUR_PROJECT_ID
+```
+
+### How it works
+
+- Campaign emails automatically use the project's SES config if one exists; otherwise fall back to the global SMTP settings.
+- Credentials (`access_key_id`, `secret_access_key`, SMTP user/pass) are encrypted with **AES-256-GCM** before being written to the database. The encryption key never leaves your server environment.
+- `GET /ses/config/:project_id` returns `has_access_key` / `has_smtp_credentials` boolean flags instead of raw secrets.
 
 ---
 
