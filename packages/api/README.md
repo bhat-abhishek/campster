@@ -58,7 +58,7 @@ $ yarn run test:e2e
 $ yarn run test:cov
 ```
 
-## RUNBOOK — auth unit tests
+## RUNBOOK — unit tests
 
 Exact commands to install, run, and test the `api` package. Run from the
 **repository root** unless noted otherwise.
@@ -80,6 +80,15 @@ yarn test:api
 # Just the auth module suites
 cd packages/api && npx jest auth
 
+# Just the campaign controller suite
+cd packages/api && npx jest campaign.controller
+
+# Just the project controller suite
+cd packages/api && npx jest project.controller
+
+# Just the contact-list controller suite
+cd packages/api && npx jest contactList.controller
+
 # Watch mode while developing
 yarn test:api:watch
 
@@ -100,8 +109,9 @@ yarn lint:api
 
 ### What is covered
 
-The auth module is exercised by three co-located suites plus shared test
-doubles:
+Each suite is co-located with its module under `src/modules/<name>/`.
+
+**Auth module** — three suites plus shared test doubles:
 
 | File | Scope |
 | --- | --- |
@@ -110,8 +120,27 @@ doubles:
 | `src/modules/auth/auth.guard.spec.ts` | `AuthGuard` — missing/invalid token rejection and payload attachment. |
 | `src/modules/auth/testing/auth.mocks.ts` | Reusable jest test doubles + fixtures shared by the suites (no real DB, JWT secret, or bcrypt binding). |
 
-All collaborators (DB-backed services, `JwtService`, `bcrypt`, the filesystem,
-and Handlebars) are mocked, so the suites are fast and hermetic.
+**Campaign module:**
+
+| File | Scope |
+| --- | --- |
+| `src/modules/campaign/campaign.controller.spec.ts` | `CampaignController` — list, get, analytics, create (ULID generation + owner stamping), update, test-email send. |
+
+**Project module:**
+
+| File | Scope |
+| --- | --- |
+| `src/modules/project/project.controller.spec.ts` | `ProjectController` — list projects, create, get by id, list members, invite, update. |
+
+**Contact-list module:**
+
+| File | Scope |
+| --- | --- |
+| `src/modules/contact-list/contactList.controller.spec.ts` | `ContactListController` — list (access check), create (role check), archive, search, get contacts, add contact (new vs existing), remove contacts (not-found guard), update, get by id. |
+
+All collaborators (DB-backed services, `JwtService`, `ConfigService`, and the
+`ulid` package) are replaced with jest mocks, so every suite is fast, hermetic,
+and requires no running database or network.
 
 ### Pre-commit hook
 

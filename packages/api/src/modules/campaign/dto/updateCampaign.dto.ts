@@ -1,9 +1,10 @@
 import {
   IsBoolean,
+  IsDate,
+  IsIn,
   IsString,
   MinLength,
   ValidateIf,
-  IsIn,
 } from 'class-validator';
 
 export class UpdateCampaignDto {
