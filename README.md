@@ -36,7 +36,7 @@
 - **Real-time analytics** — opens, clicks, bounces
 - **A/B testing** — compare subject lines and content
 - **Role-based access control** — fine-grained team permissions
-- **Multiple email providers** — SMTP or AWS SES per project (IAM credentials, environment credential chain, or SES SMTP interface)
+- **Multiple email providers** — SMTP, AWS SES, or SendGrid per project — configured per-project with encrypted credential storage
 
 ---
 
@@ -163,6 +163,13 @@ CLIENT_HOST=http://localhost:3000
 
 # ── Bounce handling (optional) ─────────────────────────────────────────────────
 BOUNCE_API_KEY=your-bounce-webhook-secret
+
+# ── AWS SES (optional — per-project config stored encrypted in DB) ─────────────
+SES_ENCRYPTION_KEY=<32-byte-hex-key>     # required to use per-project AWS SES
+# AWS_REGION=us-east-1                   # default region for environment-auth method
+
+# ── SendGrid (optional — per-project config stored encrypted in DB) ────────────
+SENDGRID_ENCRYPTION_KEY=<32-byte-hex-key>  # required to use per-project SendGrid
 ```
 
 ### Client — `packages/client/.env.local`
@@ -263,6 +270,94 @@ curl -X DELETE http://localhost:1335/ses/config/YOUR_PROJECT_ID
 - Campaign emails automatically use the project's SES config if one exists; otherwise fall back to the global SMTP settings.
 - Credentials (`access_key_id`, `secret_access_key`, SMTP user/pass) are encrypted with **AES-256-GCM** before being written to the database. The encryption key never leaves your server environment.
 - `GET /ses/config/:project_id` returns `has_access_key` / `has_smtp_credentials` boolean flags instead of raw secrets.
+
+---
+
+## SendGrid Configuration
+
+Each project can optionally use SendGrid instead of the global SMTP server or AWS SES. Credentials are stored encrypted in the database, and the API uses SendGrid's SMTP relay under the hood — no additional npm packages are required.
+
+**Priority order:** SES (if configured for the project) → SendGrid (if configured) → global SMTP fallback.
+
+### Prerequisites
+
+1. **Generate a SendGrid API key** in the [SendGrid dashboard](https://app.sendgrid.com/) under **Settings → API Keys**. Grant at minimum *Mail Send* permission.
+
+2. **Set the encryption key** (required to store any SendGrid credentials):
+   ```bash
+   # Generate a random key
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   # Add to your .env:
+   SENDGRID_ENCRYPTION_KEY=<generated-value>
+   ```
+
+3. **Run the new migration** so the `sendgrid_configs` table is created:
+   ```bash
+   cd packages/api && yarn seed
+   ```
+
+### Environment Variables
+
+Add to `packages/api/.env`:
+
+```bash
+# ── SendGrid (optional — per-project config stored encrypted in DB) ────────────
+SENDGRID_ENCRYPTION_KEY=<32-byte-hex-key>
+```
+
+### API Endpoints
+
+All endpoints require authentication (JWT cookie).
+
+#### Save or update a project's SendGrid config
+
+```bash
+curl -X POST http://localhost:1335/sendgrid/config \
+  -H 'Content-Type: application/json' \
+  -b 'token=<your-jwt>' \
+  -d '{
+    "project_id": "YOUR_PROJECT_ID",
+    "api_key": "SG.xxxxxxxxxxxxxxxxxxxx",
+    "from_email": "noreply@yourdomain.com",
+    "from_name": "Your Company"
+  }'
+```
+
+`from_email` and `from_name` are optional. They are stored as metadata but do not override the `from` field set by the campaign/transactional sender — that is controlled at send time.
+
+#### Get a project's SendGrid config (API key is never returned)
+
+```bash
+curl http://localhost:1335/sendgrid/config/YOUR_PROJECT_ID \
+  -b 'token=<your-jwt>'
+```
+
+Response example:
+```json
+{
+  "id": "01J...",
+  "project_id": "YOUR_PROJECT_ID",
+  "from_email": "noreply@yourdomain.com",
+  "from_name": "Your Company",
+  "has_api_key": true,
+  "created_at": "2026-01-01T00:00:00.000Z",
+  "updated_at": "2026-01-01T00:00:00.000Z"
+}
+```
+
+#### Remove a project's SendGrid config (falls back to SES or global SMTP)
+
+```bash
+curl -X DELETE http://localhost:1335/sendgrid/config/YOUR_PROJECT_ID \
+  -b 'token=<your-jwt>'
+```
+
+### How it works
+
+- Campaign and transactional emails automatically use the project's SendGrid config when one exists; otherwise the system falls through to SES, then global SMTP.
+- Emails are sent via the **SendGrid SMTP relay** (`smtp.sendgrid.net:587`) using your API key as the password — this means all SendGrid features (open/click tracking, suppression lists, IP warm-up, unsubscribe groups) activated in your SendGrid account apply automatically.
+- The API key is encrypted with **AES-256-GCM** before being stored. The encryption key never leaves your server environment.
+- `GET /sendgrid/config/:project_id` returns `has_api_key: true` instead of the raw key.
 
 ---
 

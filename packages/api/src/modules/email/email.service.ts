@@ -11,6 +11,7 @@ import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { SesService } from '../ses/ses.service';
+import { SendgridService } from '../sendgrid/sendgrid.service';
 
 type MailOptions = {
   from: string;
@@ -34,6 +35,7 @@ export class EmailService implements OnModuleInit {
     private readonly configService: ConfigService,
     private jwtService: JwtService,
     private readonly sesService: SesService,
+    private readonly sendgridService: SendgridService,
   ) {}
 
   onModuleInit() {
@@ -53,8 +55,7 @@ export class EmailService implements OnModuleInit {
   }
 
   /**
-   * Returns the SES transporter for a project if one is configured,
-   * falling back to the global SMTP transporter.
+   * Resolution order for a project: SES → SendGrid → global SMTP fallback.
    */
   private async resolveTransporter(
     project_id?: string,
@@ -67,6 +68,16 @@ export class EmailService implements OnModuleInit {
       } catch (err) {
         this.logger.warn(
           `Failed to build SES transporter for project ${project_id}: ${err.message}`,
+        );
+      }
+
+      try {
+        const sendgridTransporter =
+          await this.sendgridService.buildTransporterForProject(project_id);
+        if (sendgridTransporter) return sendgridTransporter;
+      } catch (err) {
+        this.logger.warn(
+          `Failed to build SendGrid transporter for project ${project_id}: ${err.message}`,
         );
       }
     }
