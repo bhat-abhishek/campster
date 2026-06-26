@@ -21,6 +21,7 @@ import { BounceModule } from './modules/bounce/bounce.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { TransactionalModule } from './modules/transactional/transactional.module';
 import { SesModule } from './modules/ses/ses.module';
+import { SendgridModule } from './modules/sendgrid/sendgrid.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { SesModule } from './modules/ses/ses.module';
     TransactionalModule,
     AnalyticsModule,
     SesModule,
+    SendgridModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

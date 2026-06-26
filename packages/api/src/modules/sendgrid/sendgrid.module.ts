@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
-import { SesService } from './ses.service';
-import { SesController } from './ses.controller';
+import { SendgridService } from './sendgrid.service';
+import { SendgridController } from './sendgrid.controller';
 import { DatabaseModule } from '../database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [DatabaseModule, ConfigModule, JwtModule],
-  controllers: [SesController],
-  providers: [SesService],
-  exports: [SesService],
+  controllers: [SendgridController],
+  providers: [SendgridService],
+  exports: [SendgridService],
 })
-export class SesModule {}
+export class SendgridModule {}

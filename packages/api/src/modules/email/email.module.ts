@@ -6,9 +6,10 @@ import { EmailConsumer } from './email.processor';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { SesModule } from '../ses/ses.module';
+import { SendgridModule } from '../sendgrid/sendgrid.module';
 
 @Module({
-  imports: [DatabaseModule, ConfigModule, JwtModule, SesModule],
+  imports: [DatabaseModule, ConfigModule, JwtModule, SesModule, SendgridModule],
   controllers: [EmailController],
   providers: [EmailService, EmailConsumer],
   exports: [EmailService],
